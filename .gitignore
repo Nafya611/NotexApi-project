@@ -1,0 +1,32 @@
+
+
+# Build directories
+/bin/
+/obj/
+/out/
+
+# Logs
+*.log
+logs/
+
+# Configuration
+.vs/
+*.appsettings.json
+*.appsettings.Development.json
+secrets.json
+
+# Dependencies
+*.nupkg
+project.lock.json
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# Docker files
+docker-compose.override.yml
+
+# MongoDB data
+/data/db/
+
+
