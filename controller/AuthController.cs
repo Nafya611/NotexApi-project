@@ -59,10 +59,43 @@ public class AuthController : ControllerBase
             Expires = tokenDescriptor.Expires
         });
     }
-}
+    [HttpPost("signup")]
+    public async Task<IActionResult> Signup([FromBody] SignupRequest request)
+    {
+        // Check if user already exists
+        var existingUser = await _userService.GetUserByUsernameAsync(request.Username);
+        if (existingUser != null)
+        {
+            return Conflict(new { message = "Username already exists" });
+        }
 
-public class LoginRequest
-{
-    public required string Username { get; set; } // Required username from request
-    public required string Password { get; set; } // Required password from request
+        // Hash the password
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        // Create a new user
+        var newUser = new User
+        {
+            Username = request.Username,
+            Password = hashedPassword,
+            Email = request.Email
+        };
+
+        // Save the user to MongoDB
+        await _userService.CreateUserAsync(newUser);
+
+        return Ok(new { message = "User registered successfully" });
+    }
+
+    public class LoginRequest
+    {
+        public required string Username { get; set; } // Required username from request
+        public required string Password { get; set; } // Required password from request
+    }
+
+    public class SignupRequest
+    {
+        public required string Username { get; set; } // Required username from request
+        public required string Password { get; set; } // Required password from request
+        public required string Email { get; set; } // Required email from request
+    }
 }

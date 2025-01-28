@@ -18,4 +18,8 @@ public class UserService
     {
         return await _users.Find(u => u.Username == username).FirstOrDefaultAsync();
     }
+    public async Task CreateUserAsync(User user)
+    {
+        await _users.InsertOneAsync(user);
+    }
 }
