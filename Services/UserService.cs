@@ -12,7 +12,7 @@ public class UserService
         var client = new MongoClient(MongoDbSettings.ConnectionString);
 
         var database = client.GetDatabase(MongoDbSettings.DatabaseName);
-        _users = database.GetCollection<User>(MongoDbSettings.CollectionName);
+        _users = database.GetCollection<User>("users");
         _blacklistCollection = database.GetCollection<BlacklistedToken>("BlacklistedTokens");
     }
 

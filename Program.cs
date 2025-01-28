@@ -35,6 +35,9 @@ builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<MongoDbSettings>>().Value);
 
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddScoped<INoteService, NoteService>();
+
 var app = builder.Build();
 
 // Enable Swagger
