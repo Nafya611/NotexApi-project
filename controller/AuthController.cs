@@ -86,6 +86,35 @@ public class AuthController : ControllerBase
         return Ok(new { message = "User registered successfully" });
     }
 
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromHeader(Name = "Authorization")] string authorization)
+    {
+        // Ensure the token is present in the Authorization header
+        if (string.IsNullOrEmpty(authorization) || !authorization.StartsWith("Bearer "))
+        {
+            return BadRequest(new { message = "Authorization token is missing or invalid." });
+        }
+
+        // Extract the token
+        var token = authorization.Substring("Bearer ".Length);
+
+        // Check if the token is already invalidated
+        var isBlacklisted = await _userService.IsTokenBlacklistedAsync(token);
+        if (isBlacklisted)
+        {
+            return BadRequest(new { message = "Token is already invalidated." });
+        }
+
+        // Add the token to the blacklist
+        await _userService.BlacklistTokenAsync(token);
+
+        return Ok(new { message = "Logout successful. Token has been invalidated." });
+    }
+
+
+
+
+
     public class LoginRequest
     {
         public required string Username { get; set; } // Required username from request
