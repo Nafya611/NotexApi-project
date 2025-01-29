@@ -23,6 +23,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+        if (jwtSettings == null)
+        {
+            throw new Exception("JWT settings are missing from configuration.");
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -33,9 +38,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                if (JwtService.BlacklistedTokens.Contains(token)) 
+                {
+                    context.Fail("Token has been revoked.");
+                }
+                return Task.CompletedTask;
+            }
+        };
+
+
     });
 
 builder.Services.AddAuthorization();
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
