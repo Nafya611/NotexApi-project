@@ -1,7 +1,6 @@
 using MongoDB.Driver;
 using NoteManagementSystem.Config;
 using NoteManagementSystem.Models;
-using System.Threading.Tasks;
 
 namespace NoteManagementSystem.Services
 {

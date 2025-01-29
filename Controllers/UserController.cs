@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using NoteManagementSystem.Models;
 using NoteManagementSystem.Services;
 using NoteManagementSystem.Auth;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace NoteManagementSystem.Controllers
 {
