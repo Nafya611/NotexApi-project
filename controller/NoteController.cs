@@ -16,7 +16,8 @@ public class NoteController : ControllerBase
     }
 
     // CREATE: api/note
-    [HttpPost]
+    [HttpPost("create")]
+    
     public async Task<IActionResult> CreateNoteAsync([FromBody] Note note)
     {
         if (note == null || string.IsNullOrEmpty(note.Title) || string.IsNullOrEmpty(note.Content))
@@ -25,11 +26,12 @@ public class NoteController : ControllerBase
         }
 
         var createdNote = await _noteService.CreateNoteAsync(note);
-        return CreatedAtAction(nameof(GetNoteByIdAsync), new { id = createdNote.Id }, createdNote);
+        return CreatedAtAction("GetNoteById", new { id = createdNote.Id }, createdNote);
+
     }
 
     // READ: api/note/{id}
-    [HttpGet("{id}")]
+    [HttpGet("{id}", Name = "GetNoteById")]
     public async Task<IActionResult> GetNoteByIdAsync(string id)
     {
         var note = await _noteService.GetNoteByIdAsync(id);
@@ -42,12 +44,13 @@ public class NoteController : ControllerBase
         return Ok(note);
     }
 
+
     // READ ALL: api/note
     [HttpGet]
     public async Task<IActionResult> GetAllNotesAsync()
     {
         var notes = await _noteService.GetAllNotesAsync();
-        return Ok(notes);
+        return Ok(new { message = "Notes retrieved successfully.", notes });
     }
 
     // UPDATE: api/note/{id}
@@ -66,7 +69,7 @@ public class NoteController : ControllerBase
             return NotFound(new { message = "Note not found." });
         }
 
-        return Ok(updatedNote);
+        return Ok(new { message = "Note updated successfully.", note = updatedNote });
     }
 
     // DELETE: api/note/{id}
@@ -79,7 +82,8 @@ public class NoteController : ControllerBase
         {
             return NotFound(new { message = "Note not found." });
         }
-
-        return NoContent(); // Status 204, meaning the resource was deleted successfully
+        return Ok(new { message = "Note deleted successfully." });
     }
+
+    
 }

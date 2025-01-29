@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Any;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -24,7 +28,26 @@ builder.Services.AddControllers();
 
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Note API", Version = "v1" });
+
+    c.MapType<Note>(() => new OpenApiSchema
+    {
+        Type = "object",
+        Properties = new Dictionary<string, OpenApiSchema>
+        {
+            ["id"] = new OpenApiSchema { Type = "string", Example = new OpenApiString("65b1234567abcd8912345678") },
+            ["title"] = new OpenApiSchema { Type = "string", Example = new OpenApiString("My Note") },
+            ["content"] = new OpenApiSchema { Type = "string", Example = new OpenApiString("This is my note content.") },
+            ["createdAt"] = new OpenApiSchema { Type = "string", Format = "date-time" },
+            ["updatedAt"] = new OpenApiSchema { Type = "string", Format = "date-time" }
+        }
+    });
+});
+
 
 // Bind MongoDbSettings from configuration
 builder.Services.Configure<MongoDbSettings>(
