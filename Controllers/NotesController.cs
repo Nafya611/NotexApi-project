@@ -20,7 +20,15 @@ namespace NoteManagementSystem.Controllers
             _noteService = noteService;
         }
 
-        private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        private string GetUserId()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                throw new UnauthorizedAccessException("User ID not found.");
+            }
+            return userId;
+        }
 
         [HttpGet]
         public async Task<ActionResult<List<Note>>> Get()
