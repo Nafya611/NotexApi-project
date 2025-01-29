@@ -1,58 +1,54 @@
 using MongoDB.Driver;
+using NoteManagementSystem.Config;
+using NoteManagementSystem.Models;
+using System.Threading.Tasks;
 
-
-public class UserService
+namespace NoteManagementSystem.Services
 {
-    private readonly IMongoCollection<User> _users;
-    private readonly IMongoCollection<BlacklistedToken> _blacklistCollection;
-
-    public UserService(MongoDbSettings MongoDbSettings)
+    public class UserService
     {
-        
-        var client = new MongoClient(MongoDbSettings.ConnectionString);
+        private readonly IMongoCollection<User> _users;
 
-        var database = client.GetDatabase(MongoDbSettings.DatabaseName);
-        _users = database.GetCollection<User>("users");
-        _blacklistCollection = database.GetCollection<BlacklistedToken>("BlacklistedTokens");
-    }
-
-
-
-    public async Task<User> GetUserByUsernameAsync(string username)
-    {
-        return await _users.Find(u => u.Username == username).FirstOrDefaultAsync();
-    }
-    public async Task CreateUserAsync(User user)
-    {
-        await _users.InsertOneAsync(user);
-    }
-    public async Task BlacklistTokenAsync(string token)
-    {
-        var blacklistedToken = new BlacklistedToken
+        public UserService(DatabaseSettings settings)
         {
-            Id = Guid.NewGuid().ToString(),
-            Token = token,
-            BlacklistedAt = DateTime.UtcNow
-        };
+            var client = new MongoClient(settings.ConnectionString);
+            var database = client.GetDatabase(settings.DatabaseName);
+            _users = database.GetCollection<User>(settings.UsersCollection);
+        }
 
-        await _blacklistCollection.InsertOneAsync(blacklistedToken);
-    }
+        public async Task<User> GetByIdAsync(string id) =>
+            await _users.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    // Check if a token is blacklisted
-    public async Task<bool> IsTokenBlacklistedAsync(string token)
+        public async Task<User> GetByEmailAsync(string email) =>
+            await _users.Find(x => x.Email == email).FirstOrDefaultAsync();
+
+        public async Task<User> CreateAsync(User user)
+        {
+            await _users.InsertOneAsync(user);
+            return user;
+        }
+
+
+    public async Task<bool> ValidateCredentialsAsync(string email, string password)
     {
-        return await _blacklistCollection
-            .Find(t => t.Token == token)
-            .AnyAsync();
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            return false; // Prevent passing null values to BCrypt
+        }
+
+        var user = await GetByEmailAsync(email.ToLower());
+        if (user == null)
+        {
+            return false; // User not found
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            throw new InvalidOperationException("Stored password hash is null or empty.");
+        }
+
+        return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+    }
+
     }
 }
-public class BlacklistedToken
-{
-    public required string Id { get; set; }
-    public required string Token { get; set; }
-    public DateTime BlacklistedAt { get; set; }
-}
-
-
-
-

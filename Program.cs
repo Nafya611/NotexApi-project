@@ -1,81 +1,57 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Any;
-
+using NoteManagementSystem.Auth;
+using NoteManagementSystem.Config;
+using NoteManagementSystem.Services;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<JwtSettings>>().Value);
+
+builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<DatabaseSettings>>().Value);
+
+builder.Services.AddSingleton<JwtService>();
+builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<CategoryService>();
+builder.Services.AddSingleton<NoteService>();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "NotexApi",
-            ValidAudience = "NotexClient",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("S3cureRandomSecretKey12345!@#$54321"))
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
         };
     });
 
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers();
-
-// Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
-
-
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Note API", Version = "v1" });
-
-    c.MapType<Note>(() => new OpenApiSchema
-    {
-        Type = "object",
-        Properties = new Dictionary<string, OpenApiSchema>
-        {
-            ["id"] = new OpenApiSchema { Type = "string", Example = new OpenApiString("65b1234567abcd8912345678") },
-            ["title"] = new OpenApiSchema { Type = "string", Example = new OpenApiString("My Note") },
-            ["content"] = new OpenApiSchema { Type = "string", Example = new OpenApiString("This is my note content.") },
-            ["createdAt"] = new OpenApiSchema { Type = "string", Format = "date-time" },
-            ["updatedAt"] = new OpenApiSchema { Type = "string", Format = "date-time" }
-        }
-    });
-});
-
-
-// Bind MongoDbSettings from configuration
-builder.Services.Configure<MongoDbSettings>(
-    builder.Configuration.GetSection("MongoDbSettings"));
-
-// Register the class as a singleton
-builder.Services.AddSingleton(sp =>
-    sp.GetRequiredService<IOptions<MongoDbSettings>>().Value);
-
-builder.Services.AddScoped<UserService>();
-
-builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Enable Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-
-
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
+app.UseAuthentication();  
+app.UseAuthorization();   
 
 app.MapControllers();
-
 app.Run();

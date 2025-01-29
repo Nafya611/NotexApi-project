@@ -1,11 +1,21 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-public class User
-{
-    [BsonId] 
-    public ObjectId Id { get; set; } 
 
-    public required string Username { get; set; }
-    public required string Password { get; set; }
-    public required string Email { get; set; }
+namespace NoteManagementSystem.Models
+{
+    public class User
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; }
+
+        [BsonElement("Username")]
+        public string? Username { get; set; }
+
+        [BsonElement("Email")]
+        public string? Email { get; set; }
+
+        [BsonElement("PasswordHash")]
+        public string? PasswordHash { get; set; }
+    }
 }
